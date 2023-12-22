@@ -16,6 +16,6 @@ def generate_password(master_key: str, service_name: str, n: int, special_symbol
     return password
 
 
-def ISaver:
+def ISaver():
     def save(self):
         pass
