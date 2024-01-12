@@ -3,7 +3,7 @@ import ctypes
 
 # TODO: Docs
 
-lib = ctypes.CDLL(os.getcwd()+"/lib.so")
+lib = ctypes.CDLL(os.getcwd()+"/lib/search_input/lib.so")
 
 
 def search_input(prompt: str, tips: list[str]):
