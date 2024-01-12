@@ -1,13 +1,12 @@
 import os
 import ctypes
 
+# TODO: Docs
+
 lib = ctypes.CDLL(os.getcwd()+"/lib.so")
 
 
-def search_input():
-    tips = ["asd", "fasd", "qwe", "vbad", 'avvasvd', "qweqwr", "vasdv"]
-
-    prompt = "Service name: "
+def search_input(prompt: str, tips: list[str]):
     c_prompt = ctypes.c_char_p(prompt.encode('ascii'))
 
     c_tips = (ctypes.c_char_p * len(tips))()
@@ -18,5 +17,6 @@ def search_input():
     c_string_ptr = ctypes.pointer(c_string)
 
     lib.input_search(c_prompt, c_tips, n, c_string_ptr)
+
     return ctypes.string_at(c_string_ptr).decode('utf-8')
 
