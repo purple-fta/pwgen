@@ -9,6 +9,16 @@
 
 // TODO: use terminal color shame
 // TODO: Magic numbers
+// TODO: Shift-Tab
+// TODO: func for termios
+
+#define SELECT_COLOR "\e[33m"
+#define UNSELECT_COLOR "\e[90m"
+#define TEXT "\e[94m"
+#define SEARCH_TEXT "\e[96m"
+#define COUNTER_NUMBER "\e[96m"
+#define COUNTER_ROW "\e[90m"
+#define COUNTER_BORDER "\e[90m"
 
 
 bool string_comparison(const char str1[], const char str2[]) {
@@ -34,6 +44,8 @@ void print_tips(int shift, int width, const char* search_text, const char* tips[
     }
     printf("\e[%dD", width);
     
+    printf(UNSELECT_COLOR);
+
     // PRINT TIPS 
     printf("[ ");
     /* printf("---%s---", tips[0]); */
@@ -43,7 +55,7 @@ void print_tips(int shift, int width, const char* search_text, const char* tips[
         if (string_comparison(search_text, tips[i])) {
             if (used_width + strlen(tips[i]) + 3 < width ) {
                 if (tab_index == d) {
-                    printf("\e[47m\e[30m%s\e[0m | ", tips[i]);
+                    printf("%s%s\e[0m %s| ", SELECT_COLOR, tips[i], UNSELECT_COLOR);
                     used_width += 3 + strlen(tips[i]);
                     *tips_index = i;
                 } else {
@@ -67,7 +79,7 @@ void print_tips(int shift, int width, const char* search_text, const char* tips[
 }
 
 
-void input_search(const char prompt[], const char* options[], int n, char* input_text) {
+char* input_search(const char prompt[], const char* options[], int n) {
     struct termios old_tms, new_tms;
     int ch = ' ';
     int index = 0;
@@ -81,6 +93,7 @@ void input_search(const char prompt[], const char* options[], int n, char* input
     new_tms.c_lflag &= ~(ECHO | ICANON);
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &new_tms);
 
+    char *input_text = malloc(sizeof(char)*150);
 
     for (int x = 0; x < 100; x++) {
         input_text[x] = '\0';
@@ -91,7 +104,7 @@ void input_search(const char prompt[], const char* options[], int n, char* input
     int width = w_size.ws_col;
 
     // Print prompt
-    printf("%s", prompt);
+    printf("%s%s", TEXT, prompt);
 
     while (1) {
         ch = getchar();
@@ -116,7 +129,7 @@ void input_search(const char prompt[], const char* options[], int n, char* input
             }
         } else {
             input_text[index] = (char)ch;
-            printf("%c", (char)ch);
+            printf("%s%c", SEARCH_TEXT, (char)ch);
             index++;
             tab_flag = false;
             tab_index = -1;
@@ -127,22 +140,132 @@ void input_search(const char prompt[], const char* options[], int n, char* input
 
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &old_tms); 
     printf("\n");
-}
-
-/*
-int main() {
-    char input_text[100];
-    for (int i = 0; i < 100; i++) {
-        input_text[i] = '\0';
-    }
+    printf("\e[0m");
     
-    const char* strings[] = {"Asd", "asc", "b", "a", "asfr", "Bcd", "bcdas", "CDB"};
-
-    input_search("Service name: ", strings, 8, input_text);
-
-    printf("%s", input_text);
-
-    return 0;
+    return input_text;
 }
-*/
+
+
+void draw_counter_text(char prompt[], int min, int max, int counter) {
+    printf(TEXT);
+    printf("\r%s", prompt);
+    
+
+    if (counter > min) {
+        printf(COUNTER_ROW);
+        printf("<");
+    } else {
+        printf(COUNTER_BORDER);
+        printf("|");
+    }
+
+    printf(COUNTER_NUMBER);
+    printf("%d", counter);
+
+    if (counter < max) {
+        printf(COUNTER_ROW);
+        printf(">");
+    } else {
+        printf(COUNTER_BORDER);
+        printf("|");
+    }
+    printf("\e[0m");
+
+}
+
+
+int counter(char prompt[], int default_val, int min, int max) {
+    struct termios old_tms, new_tms;
+    tcgetattr(STDIN_FILENO, &old_tms);
+    new_tms = old_tms;
+    new_tms.c_lflag &= ~(ECHO | ICANON);
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &new_tms);
+
+    int counter = default_val;
+    char ch;
+    
+    printf("\e[?25l");
+
+    draw_counter_text(prompt, min, max, counter);
+
+    while (1) {
+
+        ch = getchar();
+        if (ch == 9) {
+            if (counter < max) 
+                counter++;
+        } else if (ch == 10) {
+            break;
+        } else if (ch == 90) {
+            if (counter > min)
+                counter--;
+        }
+
+        printf("\e[K\e[1K");
+
+        draw_counter_text(prompt, min, max, counter);
+    }
+
+    printf("\e[?25h");
+
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &old_tms); 
+
+    printf("\n");
+
+    return counter;
+}
+
+
+void draw_checker_text(char prompt[], bool value) {
+    printf(TEXT);
+    printf("\r%s", prompt);
+    
+    if (value) {
+        printf("%s[%sx%s]", UNSELECT_COLOR, SEARCH_TEXT, UNSELECT_COLOR);
+    } else {
+        printf(UNSELECT_COLOR);
+        printf("[ ]");
+    }
+    printf("\e[0m");
+}
+
+
+bool checker(char prompt[], bool def_val) {
+    struct termios old_tms, new_tms;
+    tcgetattr(STDIN_FILENO, &old_tms);
+    new_tms = old_tms;
+    new_tms.c_lflag &= ~(ECHO | ICANON);
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &new_tms);
+
+    bool val = def_val;
+    char ch;
+
+    printf("\e[?25l");
+
+    draw_checker_text(prompt, val);
+    
+    while (1) {
+        ch = getchar();
+
+        if (ch == 9) {
+            printf("123123123");
+            val = !val;
+        } else if (ch == 10) {
+            break;
+        }
+
+        printf("%d-%c", ch, ch);
+        printf("\e[K\e[1K");
+        draw_checker_text(prompt, val);
+    }
+
+    printf("\e[?25h");
+
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &old_tms); 
+
+    printf("\n");
+
+    return val;
+}
+
 
