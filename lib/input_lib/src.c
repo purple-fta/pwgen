@@ -11,6 +11,7 @@
 // TODO: Magic numbers
 // TODO: Shift-Tab
 // TODO: func for termios
+// TODO: promPt -> promt
 
 #define SELECT_COLOR "\e[33m"
 #define UNSELECT_COLOR "\e[90m"
