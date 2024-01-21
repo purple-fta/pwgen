@@ -5,7 +5,7 @@ import ctypes
 if __name__ == "__main__":
     lib = ctypes.CDLL(os.getcwd()+"/lib.so")
 else:
-    lib = ctypes.CDLL(os.getcwd()+"/lib/search_input/lib.so")
+    lib = ctypes.CDLL(os.getcwd()+"/lib/input_lib/lib.so")
 
 
 lib.input_search.restype = ctypes.c_char_p
